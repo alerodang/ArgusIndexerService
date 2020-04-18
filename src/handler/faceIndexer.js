@@ -4,7 +4,7 @@ const AWS = require('aws-sdk');
 const rekognition = new AWS.Rekognition;
 const dynamoDB = new AWS.DynamoDB;
 
-const producersTable = process.env.PRODUCERS_TABLE;
+const collectionsTable = process.env.COLLECTIONS_TABLE;
 
 module.exports.handler = async (event) => {
 
@@ -30,29 +30,32 @@ module.exports.handler = async (event) => {
 
     const rekognitionResponse = await rekognition.indexFaces(indexFacesParams, function(err, data) {
         if (err) console.log(err, err.stack); // an error occurred
-        else     console.log('BEBUG:', data);           // successful response
+        else     console.log('DEBUG:', data);           // successful response
     }).promise();
 
-    console.log("DEBUG", rekognitionResponse);
+    console.log("DEBUG:", rekognitionResponse);
 
     const faceId = rekognitionResponse.FaceRecords[0].Face.FaceId;
 
     const params = {
         Item: {
-            "CollectionId": {
+            "rekognitionFaceId": {
+                S: faceId
+            },
+            "collectionId": {
                 S: collectionId
             },
-            "Name": {
+            "name": {
                 S: name
-            },
-            "RekognitionFaceId": {
-                S: faceId
             }
         },
-        TableName: producersTable
+        TableName: collectionsTable
     };
 
-    await dynamoDB.putItem(params).promise();
+    await dynamoDB.putItem(params, function(err, data) {
+        if (err) console.log(err, err.stack); // an error occurred
+        else console.log('DEBUG dynamo getItem:', data); // successful response
+    }).promise();
 
     return {
         statusCode: 200,

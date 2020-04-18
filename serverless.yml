@@ -9,12 +9,10 @@ provider:
   apiKeys:
     - argus-indexer-service-testing-key
     - argus-indexer-service-app-dev
-    - argus-indexer-service-camera-dev
 
   environment:
     APP_BUCKET: argus-security-app
-    COLLECTIONS_TABLE: argus-security-app-faces
-    PRODUCERS_TABLE: argus-producers
+    COLLECTIONS_TABLE: argus-collections
 
   iamRoleStatements:
     - Effect: Allow
@@ -77,10 +75,10 @@ resources:
       Properties:
         TableName: argus-collections
         AttributeDefinitions:
-          - AttributeName: RekognitionFaceId
+          - AttributeName: rekognitionFaceId
             AttributeType: S
         KeySchema:
-          - AttributeName: RekognitionFaceId
+          - AttributeName: rekognitionFaceId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 1
