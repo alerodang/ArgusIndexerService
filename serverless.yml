@@ -1,0 +1,87 @@
+service: argus-indexer-service
+
+provider:
+
+  name: aws
+  stage: dev
+  region: eu-west-1
+
+  apiKeys:
+    - argus-indexer-service-testing-key
+    - argus-indexer-service-app-dev
+    - argus-indexer-service-camera-dev
+
+  environment:
+    APP_BUCKET: argus-security-app
+    COLLECTIONS_TABLE: argus-security-app-faces
+    PRODUCERS_TABLE: argus-producers
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:*
+      Resource:
+        - ${self:custom.bucket-arn}
+        - ${self:custom.bucket-arn}/*
+    - Effect: Allow
+      Action:
+        - rekognition:*
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - dynamoDB:*
+      Resource: "*"
+
+package:
+  exclude:
+    - node_modules/**
+
+functions:
+
+  uploadFace:
+    runtime: nodejs12.x
+    handler: src/handler/uploadFace.handler
+    events:
+      - http:
+          path: face
+          method: post
+
+  faceIndexer:
+    runtime: nodejs12.x
+    handler: src/handler/faceIndexer.handler
+    events:
+      - s3:
+          bucket: argus-security-app
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: faces/
+            - suffix: .jpg
+          existing: true
+
+  createCollection:
+    runtime: nodejs12.x
+    handler: src/handler/createCollection.handler
+    events:
+      - http:
+          path: collection
+          method: post
+
+custom:
+  bucket-arn: arn:aws:s3:::argus-security-app
+
+resources:
+  Resources:
+
+    CollectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: argus-collections
+        AttributeDefinitions:
+          - AttributeName: RekognitionFaceId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: RekognitionFaceId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
