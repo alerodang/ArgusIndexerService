@@ -30,10 +30,6 @@ provider:
         - dynamoDB:*
       Resource: "*"
 
-package:
-  exclude:
-    - node_modules/**
-
 functions:
 
   uploadFace:
@@ -43,6 +39,9 @@ functions:
       - http:
           path: face
           method: post
+          private: true
+          authorizer:
+            arn:  ${self:custom.authorizer-arn}
 
   faceIndexer:
     runtime: nodejs12.x
@@ -63,9 +62,13 @@ functions:
       - http:
           path: collection
           method: post
+          private: true
+          authorizer:
+            arn:  ${self:custom.authorizer-arn}
 
 custom:
   bucket-arn: arn:aws:s3:::argus-security-app
+  authorizer-arn: arn:aws:cognito-idp:eu-west-1:206386915763:userpool/eu-west-1_vMNp7XqR0
 
 resources:
   Resources:

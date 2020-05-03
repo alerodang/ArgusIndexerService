@@ -2,13 +2,19 @@
 
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
+const jwt = require('jsonwebtoken');
 
 const bucket = process.env.APP_BUCKET;
 
 module.exports.handler = async (event) => {
+    console.log('DEBUG: parse headers');
+    const {Authorization: token} = event.headers;
+
+    const decodedToken = jwt.decode(token);
+    const account = decodedToken["email"];
 
     console.log('DEBUG: parse body');
-    const {account, client, face} = JSON.parse(event.body);
+    const {client, face} = JSON.parse(event.body);
 
     const buffer = Buffer.from(face.image.replace(/^data:image\/\w+;base64,/, ''), 'base64');
     const objectKey = 'faces/' + account + '/' + face.name + '/' + face.position + '.jpg';
